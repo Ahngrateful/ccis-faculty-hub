@@ -24,8 +24,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (empty($email) || empty($password)) {
             $error_message = "Email and password are required.";
         } else {
-            // Check if user exists and is an admin (role_id = 1)
-            $query = "SELECT * FROM faculty WHERE email = ? AND role_id = '1' LIMIT 1";
+            // Check if user exists and is an faculty (role_id = 1)
+            $query = "SELECT * FROM faculty WHERE email = ? AND role_id = '2' LIMIT 1";
             $stmt = mysqli_prepare($conn, $query);
 
             if ($stmt) {

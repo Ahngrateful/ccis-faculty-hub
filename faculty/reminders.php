@@ -19,184 +19,132 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reminders - FPMS</title>
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Google Fonts - Optional for better typography -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <!-- Additional reminders-specific styles -->
   <style>
-    :root {
-      --primary-color: #006834;
-      --secondary-color: #75d979;
-      --accent-color: #ffde26;
-      --light-gray: #f9f9f9;
-      --medium-gray: #eaeaea;
-      --dark-gray: #555;
-      --error-color: #f44336;
-      --warning-color: #ff9800;
-      --info-color: #2196f3;
-      --success-color: #4caf50;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html,
     body {
-      height: 100%;
-      font-family: "Segoe UI", Arial, sans-serif;
-      background-color: var(--light-gray);
-      color: #333;
-      line-height: 1.6;
+      font-family: 'Inter', var(--font-family);
+    }
+
+    /* Reminders-specific styles */
+    .reminders-header {
+      background: linear-gradient(120deg, var(--primary-light), var(--primary-color));
+      border-radius: var(--border-radius-md);
+      color: white;
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-md);
+      position: relative;
       overflow: hidden;
     }
 
-    .container {
-      display: flex;
-      height: 100vh;
+    .reminders-header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 200%;
+      background: rgba(255, 255, 255, 0.1);
+      transform: rotate(30deg);
     }
 
-    /* Fixed Sidebar */
-    .sidebar {
-      width: 250px;
-      background-color: var(--primary-color);
-      color: white;
-      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-      position: fixed;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      z-index: 10;
+    .reminders-info {
+      position: relative;
+      z-index: 1;
     }
 
-    .sidebar-header {
-      padding: 20px;
-      border-bottom: 1px solid var(--secondary-color);
+    .reminders-title {
+      font-size: 1.8rem;
+      margin-bottom: var(--spacing-sm);
+      font-weight: 700;
     }
 
-    .sidebar h3 {
-      color: var(--accent-color);
-      margin: 0;
-      font-size: 1.2rem;
+    .reminders-subtitle {
+      opacity: 0.9;
+      font-size: 1rem;
     }
 
-    .nav-menu {
-      padding: 15px;
-      overflow-y: auto;
-      flex-grow: 1;
-    }
-
-    .nav-menu a {
-      color: white;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      padding: 12px 15px;
-      margin: 5px 0;
-      border-radius: 4px;
-      transition: all 0.3s ease;
-      background: transparent;
-      font-size: 15px;
-    }
-
-    .nav-menu a:hover {
-      background-color: rgba(117, 217, 121, 0.2);
-    }
-
-    .nav-menu a.active {
-      background-color: var(--secondary-color);
-      color: var(--primary-color);
-      font-weight: 600;
-    }
-
-    .nav-menu i {
-      margin-right: 10px;
-      width: 20px;
-      text-align: center;
-    }
-
-    /* Scrollable Content Area */
-    .content {
-      flex: 1;
-      margin-left: 250px;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      background-color: #ffffff;
-    }
-
-    .header {
-      background-color: #ffffff;
-      padding: 15px 30px;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      border-bottom: 1px solid var(--medium-gray);
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      position: sticky;
-      top: 0;
-      z-index: 5;
-    }
-
-    .user-info {
-      font-weight: 500;
-      color: var(--primary-color);
-    }
-
-    .notification {
-      margin-left: 15px;
-      background-color: var(--accent-color);
-      color: var(--primary-color);
-      padding: 5px 12px;
-      border-radius: 50px;
-      font-weight: bold;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-    }
-
-    .notification i {
-      margin-right: 5px;
-    }
-
-    .main-content {
-      padding: 30px;
-      flex: 1;
-    }
-
-    h2 {
-      color: var(--primary-color);
-      border-bottom: 2px solid var(--secondary-color);
-      padding-bottom: 10px;
-      margin-top: 0;
-      margin-bottom: 25px;
-    }
-
+    /* Filters and table styles */
     .filters {
       display: flex;
-      gap: 15px;
-      margin-bottom: 30px;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
       align-items: center;
       flex-wrap: wrap;
     }
 
-    select,
-    input {
-      padding: 12px;
-      width: 200px;
+    select {
+      padding: var(--spacing-sm);
+      min-width: 200px;
       border: 1px solid var(--medium-gray);
-      border-radius: 4px;
+      border-radius: var(--border-radius-sm);
       font-family: inherit;
-      transition: all 0.3s;
+      transition: all var(--transition-normal);
     }
 
-    select:focus,
-    input:focus {
+    select:focus {
       outline: none;
       border-color: var(--secondary-color);
       box-shadow: 0 0 0 2px rgba(117, 217, 121, 0.2);
+    }
+
+    /* Enhanced table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: var(--border-radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      margin-top: var(--spacing-md);
+    }
+
+    th {
+      background: linear-gradient(to right, var(--primary-color), var(--primary-light));
+      color: white;
+      padding: var(--spacing-md);
+      text-align: left;
+      font-weight: 600;
+      position: relative;
+    }
+
+    td {
+      border-bottom: 1px solid var(--medium-gray);
+      padding: var(--spacing-md);
+      text-align: left;
+    }
+
+    tr:hover {
+      background-color: var(--light-gray);
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: none;
+      cursor: pointer;
+      border-radius: var(--border-radius-sm);
+      font-weight: 500;
+      transition: all var(--transition-normal);
+      display: flex;
+      align-items: center;
+    }
+
+    button:hover {
+      background-color: var(--secondary-color);
+      color: var(--primary-color);
+    }
+
+    button i {
+      margin-right: var(--spacing-xs);
     }
 
     button {
@@ -351,6 +299,27 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
         overflow-x: auto;
       }
     }
+
+    .sidebar-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: var(--spacing-md) 0;
+    }
+
+    .logo {
+      height: 90px;
+      width: auto;
+      margin-bottom: 15px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+      transition: var(--transition);
+    }
+
+    .logo:hover {
+      transform: scale(1.05);
+    }
   </style>
 </head>
 
@@ -358,7 +327,8 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
   <div class="container">
     <div class="sidebar">
       <div class="sidebar-header">
-        <h3>FPMS - CCIS</h3>
+        <img src="../assets/CCIS-Logo-Official.png" alt="College Logo" class="logo">
+        <h3>CCIS - <i>FACULTY HUB</i></h3>
       </div>
       <nav class="nav-menu">
         <a href="dashboard.php"><i class="fa-solid fa-house"></i> Dashboard</a>
@@ -367,20 +337,8 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
         <a href="documents.php"><i class="fa-solid fa-file-lines"></i> Documents</a>
         <a href="reminders.php" class="active"><i class="fa-solid fa-bell"></i> Reminders</a>
         <a href="ched_compliance.php"><i class="fa-solid fa-list-check"></i> CHED Compliance</a>
-        <form action="{{ route('logout') }}" method="POST">
-          <input type="hidden" name="_token" value="{{ csrf_token() }}" />
-          <button
-            type="submit"
-            style="
-                background: none;
-                border: none;
-                padding: 0;
-                text-align: left;
-                width: 100%;
-              ">
-            <a href="#"><i class="fa-solid fa-door-open"></i> Logout</a>
-          </button>
-        </form>
+        <a href="settings.php"><i class="fa-solid fa-gear"></i> Settings</a>
+        <a href="logout.php"><i class="fa-solid fa-door-open"></i> Logout</a>
       </nav>
     </div>
 
@@ -394,7 +352,15 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
       </div>
 
       <div class="main-content">
-        <h2>CHED Compliance Reminders</h2>
+        <!-- Reminders Header Banner -->
+        <div class="reminders-header slide-in-left">
+          <div class="reminders-info">
+            <div class="reminders-title">CHED Compliance Reminders</div>
+            <div class="reminders-subtitle">Stay updated with all your compliance requirements and deadlines</div>
+          </div>
+        </div>
+
+        <h2>Reminders Management</h2>
 
         <div class="filters">
           <select>
@@ -475,6 +441,24 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
       </div>
     </div>
   </div>
+
+  <script>
+    // Add fade-in animations to elements
+    $(document).ready(function () {
+      // Apply animations to reminders header
+      $('.reminders-header').addClass('slide-in-left');
+
+      // Animate the table rows with staggered delay
+      $('tbody tr').each(function (i) {
+        $(this).addClass('slide-in-right');
+        $(this).css('animation-delay', (i * 0.1) + 's');
+      });
+
+      // Animate the button
+      $('button').addClass('slide-in-left');
+      $('button').css('animation-delay', '0.3s');
+    });
+  </script>
 </body>
 
 </html>

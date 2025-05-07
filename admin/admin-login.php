@@ -11,47 +11,52 @@ $success_message = "";
 
 // Process login form
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Safely get inputs
-    $email = mysqli_real_escape_string($conn, $_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-
-    // Validate inputs
-    if (empty($email) || empty($password)) {
-        $error_message = "Email and password are required.";
+    // Honeypot check
+    if (!empty($_POST['website'])) {
+        // Treat this as a bot submission
+        $error_message = "Bot detected. Submission blocked.";
     } else {
-        // Check if user exists and is an admin (role_id = 2)
-        $query = "SELECT * FROM faculty WHERE email = ? AND role_id = '2' LIMIT 1";
-        $stmt = mysqli_prepare($conn, $query);
-        
-        if ($stmt) {
-            mysqli_stmt_bind_param($stmt, "s", $email);
-            mysqli_stmt_execute($stmt);
-            $result = mysqli_stmt_get_result($stmt);
+        $email = mysqli_real_escape_string($conn, $_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
 
-            if (mysqli_num_rows($result) === 1) {
-                $user = mysqli_fetch_assoc($result);
-                
-                // Verify password using 'password_hash' column
-                if (password_verify($password, $user['password_hash'])) {
-                    // Set session variables
-                    $_SESSION['admin_id'] = $user['id'];
-                    $_SESSION['admin_name'] = $user['name'];
-                    $_SESSION['admin_email'] = $user['email'];
-                    $_SESSION['admin_logged_in'] = true;
-
-                    // Redirect to dashboard
-                    header("Location: dashboard.php");
-                    exit();
-                } else {
-                    $error_message = "Invalid password.";
-                }
-            } else {
-                $error_message = "No admin account found with this email.";
-            }
-
-            mysqli_stmt_close($stmt);
+        // Validate inputs
+        if (empty($email) || empty($password)) {
+            $error_message = "Email and password are required.";
         } else {
-            $error_message = "Database error: Failed to prepare statement.";
+            // Check if user exists and is an admin (role_id = 2)
+            $query = "SELECT * FROM faculty WHERE email = ? AND role_id = '2' LIMIT 1";
+            $stmt = mysqli_prepare($conn, $query);
+
+            if ($stmt) {
+                mysqli_stmt_bind_param($stmt, "s", $email);
+                mysqli_stmt_execute($stmt);
+                $result = mysqli_stmt_get_result($stmt);
+
+                if (mysqli_num_rows($result) === 1) {
+                    $user = mysqli_fetch_assoc($result);
+
+                    // Verify password using 'password_hash' column
+                    if (password_verify($password, $user['password_hash'])) {
+                        // Set session variables
+                        $_SESSION['admin_id'] = $user['id'];
+                        $_SESSION['admin_name'] = $user['name'];
+                        $_SESSION['admin_email'] = $user['email'];
+                        $_SESSION['admin_logged_in'] = true;
+
+                        // Redirect to dashboard
+                        header("Location: dashboard.php");
+                        exit();
+                    } else {
+                        $error_message = "Invalid password.";
+                    }
+                } else {
+                    $error_message = "No admin account found with this email.";
+                }
+
+                mysqli_stmt_close($stmt);
+            } else {
+                $error_message = "Database error: Failed to prepare statement.";
+            }
         }
     }
 }
@@ -61,6 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>CCIS - Faculty Hub Login</title>
@@ -85,12 +91,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         /* Login Panel */
         .login-container {
-            background-color: rgba(0, 64, 0, 0.7); /* Dark green transparent background with 70% opacity */
+            background-color: rgba(0, 64, 0, 0.7);
+            /* Dark green transparent background with 70% opacity */
             border-radius: 8px;
             width: 700px;
             position: relative;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-            display: flex; /* Use flexbox to create the split layout */
+            display: flex;
+            /* Use flexbox to create the split layout */
         }
 
         /* Logo Section (Left Side) */
@@ -177,7 +185,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .forgot-password a:hover {
             text-decoration: underline;
         }
-        
+
         /* Alert Messages */
         .alert {
             padding: 10px;
@@ -185,13 +193,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border-radius: 5px;
             font-size: 14px;
         }
-        
+
         .alert-danger {
             background-color: rgba(255, 0, 0, 0.1);
             color: #ff6b6b;
             border: 1px solid rgba(255, 0, 0, 0.2);
         }
-        
+
         .alert-success {
             background-color: rgba(0, 255, 0, 0.1);
             color: #75d979;
@@ -199,6 +207,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     </style>
 </head>
+
 <body>
     <div class="login-wrapper">
         <div class="login-container">
@@ -206,24 +215,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="logo-section">
                 <img src="../assets/CCIS-Logo-Official.png" alt="CCIS Logo">
             </div>
-            
+
             <!-- Right side with login form -->
             <div class="form-section">
                 <div class="login-form">
                     <h2>Faculty Hub - Admin Login</h2>
-                    
+
                     <?php if (!empty($error_message)): ?>
                         <div class="alert alert-danger">
                             <?php echo $error_message; ?>
                         </div>
                     <?php endif; ?>
-                    
+
                     <?php if (!empty($success_message)): ?>
                         <div class="alert alert-success">
                             <?php echo $success_message; ?>
                         </div>
                     <?php endif; ?>
-                    
+
                     <form action="" method="POST">
                         <div class="input-group">
                             <i class="fas fa-user"></i>
@@ -243,4 +252,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 </body>
+
 </html>

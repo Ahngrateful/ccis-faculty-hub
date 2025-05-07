@@ -19,186 +19,177 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CHED Compliance - FPMS</title>
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Google Fonts - Optional for better typography -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <!-- Additional compliance-specific styles -->
   <style>
-    :root {
-      --primary-color: #006834;
-      --secondary-color: #75d979;
-      --accent-color: #ffde26;
-      --light-gray: #f9f9f9;
-      --medium-gray: #eaeaea;
-      --dark-gray: #555;
-      --error-color: #f44336;
-      --warning-color: #ff9800;
-      --info-color: #2196f3;
-      --success-color: #4caf50;
-      --pink-color: #e91e63;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html,
     body {
-      height: 100%;
-      font-family: "Segoe UI", Arial, sans-serif;
-      background-color: var(--light-gray);
-      color: #333;
-      line-height: 1.6;
+      font-family: 'Inter', var(--font-family);
+    }
+
+    /* CHED compliance-specific styles */
+    .compliance-header {
+      background: linear-gradient(120deg, var(--primary-light), var(--primary-color));
+      border-radius: var(--border-radius-md);
+      color: white;
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-md);
+      position: relative;
       overflow: hidden;
     }
 
-    .container {
-      display: flex;
-      height: 100vh;
+    .compliance-header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 200%;
+      background: rgba(255, 255, 255, 0.1);
+      transform: rotate(30deg);
     }
 
-    /* Fixed Sidebar */
-    .sidebar {
-      width: 250px;
-      background-color: var(--primary-color);
-      color: white;
-      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-      position: fixed;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      z-index: 10;
+    .compliance-info {
+      position: relative;
+      z-index: 1;
     }
 
-    .sidebar-header {
-      padding: 20px;
-      border-bottom: 1px solid var(--secondary-color);
+    .compliance-title {
+      font-size: 1.8rem;
+      margin-bottom: var(--spacing-sm);
+      font-weight: 700;
     }
 
-    .sidebar h3 {
-      color: var(--accent-color);
-      margin: 0;
-      font-size: 1.2rem;
+    .compliance-subtitle {
+      opacity: 0.9;
+      font-size: 1rem;
     }
 
-    .nav-menu {
-      padding: 15px;
-      overflow-y: auto;
-      flex-grow: 1;
-    }
-
-    .nav-menu a {
-      color: white;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      padding: 12px 15px;
-      margin: 5px 0;
-      border-radius: 4px;
-      transition: all 0.3s ease;
-      background: transparent;
-      font-size: 15px;
-    }
-
-    .nav-menu a:hover {
-      background-color: rgba(117, 217, 121, 0.2);
-    }
-
-    .nav-menu a.active {
-      background-color: var(--secondary-color);
-      color: var(--primary-color);
-      font-weight: 600;
-    }
-
-    .nav-menu i {
-      margin-right: 10px;
-      width: 20px;
-      text-align: center;
-    }
-
-    /* Scrollable Content Area */
-    .content {
-      flex: 1;
-      margin-left: 250px;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      background-color: #ffffff;
-    }
-
-    .header {
-      background-color: #ffffff;
-      padding: 15px 30px;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      border-bottom: 1px solid var(--medium-gray);
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      position: sticky;
-      top: 0;
-      z-index: 5;
-    }
-
-    .user-info {
-      font-weight: 500;
-      color: var(--primary-color);
-    }
-
-    .main-content {
-      padding: 30px;
-      flex: 1;
-    }
-
-    h2 {
-      color: var(--primary-color);
-      border-bottom: 2px solid var(--secondary-color);
-      padding-bottom: 10px;
-      margin-top: 0;
-      margin-bottom: 25px;
-    }
-
+    /* Enhanced status panel */
     .status {
-      background-color: #fff9e6;
-      padding: 20px;
-      margin-bottom: 30px;
-      border-radius: 8px;
-      border-left: 4px solid var(--accent-color);
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      background: linear-gradient(to right, rgba(255, 222, 38, 0.1), rgba(255, 222, 38, 0.05));
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      border-radius: var(--border-radius-md);
+      border-left: 5px solid var(--accent-color);
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+      transition: all var(--transition-normal);
     }
 
+    .status:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .status::after {
+      content: '';
+      position: absolute;
+      right: -30px;
+      bottom: -30px;
+      width: 100px;
+      height: 100px;
+      background-color: rgba(255, 222, 38, 0.15);
+      border-radius: 50%;
+      z-index: 0;
+    }
+
+    .status-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Enhanced progress bar */
     .progress-container {
-      height: 20px;
+      height: 24px;
       background-color: var(--light-gray);
-      border-radius: 10px;
-      margin: 15px 0;
+      border-radius: var(--border-radius-lg);
+      margin: var(--spacing-md) 0;
       overflow: hidden;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+      position: relative;
     }
 
     .progress-bar {
       height: 100%;
       width: 75%;
-      background-color: var(--primary-color);
-      border-radius: 10px;
-      transition: width 0.5s ease;
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      border-radius: var(--border-radius-lg);
+      transition: width 1s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg,
+          rgba(255, 255, 255, 0.2) 25%,
+          transparent 25%,
+          transparent 50%,
+          rgba(255, 255, 255, 0.2) 50%,
+          rgba(255, 255, 255, 0.2) 75%,
+          transparent 75%);
+      background-size: 30px 30px;
+      animation: progress-animation 2s linear infinite;
+      z-index: 1;
+    }
+
+    @keyframes progress-animation {
+      0% {
+        background-position: 0 0;
+      }
+
+      100% {
+        background-position: 30px 0;
+      }
+    }
+
+    .progress-percentage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      z-index: 2;
     }
 
     .deadline {
       color: var(--error-color);
-      font-weight: bold;
+      font-weight: 700;
+      background-color: rgba(244, 67, 54, 0.1);
+      padding: 3px 8px;
+      border-radius: var(--border-radius-sm);
+      display: inline-block;
+      margin-top: var(--spacing-sm);
     }
 
+    /* Enhanced summary boxes */
     .summary-boxes {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
     }
 
     .summary-box {
-      flex: 1;
       background-color: #ffffff;
-      padding: 20px;
+      padding: var(--spacing-lg);
       border-radius: 8px;
       box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
       text-align: center;
@@ -367,6 +358,27 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
         gap: 10px;
       }
     }
+
+    .sidebar-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: var(--spacing-md) 0;
+    }
+
+    .logo {
+      height: 90px;
+      width: auto;
+      margin-bottom: 15px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+      transition: var(--transition);
+    }
+
+    .logo:hover {
+      transform: scale(1.05);
+    }
   </style>
 </head>
 
@@ -374,7 +386,8 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
   <div class="container">
     <div class="sidebar">
       <div class="sidebar-header">
-        <h3>FPMS - CCIS</h3>
+        <img src="../assets/CCIS-Logo-Official.png" alt="College Logo" class="logo">
+        <h3>CCIS - <i>FACULTY HUB</i></h3>
       </div>
       <nav class="nav-menu">
         <a href="dashboard.php"><i class="fa-solid fa-house"></i> Dashboard</a>
@@ -383,11 +396,10 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
         <a href="documents.php"><i class="fa-solid fa-file-lines"></i> Documents</a>
         <a href="reminders.php"><i class="fa-solid fa-bell"></i> Reminders</a>
         <a href="ched_compliance.php" class="active"><i class="fa-solid fa-list-check"></i> CHED Compliance</a>
+        <a href="settings.php"><i class="fa-solid fa-gear"></i> Settings</a>
         <form action="{{ route('logout') }}" method="POST">
           <input type="hidden" name="_token" value="{{ csrf_token() }}" />
-          <button
-            type="submit"
-            style="
+          <button type="submit" style="
                 background: none;
                 border: none;
                 padding: 0;
@@ -512,7 +524,7 @@ if (!isset($_SESSION['faculty_logged_in']) || $_SESSION['faculty_logged_in'] !==
         </table>
 
         <div class="action-buttons">
-          <a href="reminders.html" class="action-button"><i class="fa-solid fa-bell"></i> View All Reminders</a>
+          <a href="reminders.php" class="action-button"><i class="fa-solid fa-bell"></i> View All Reminders</a>
           <a href="#" class="action-button"><i class="fa-solid fa-file-arrow-down"></i> Download Compliance
             Report</a>
         </div>
