@@ -7,7 +7,9 @@
   <title>
     College of Computing & Information Sciences | Faculty Management
   </title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
     :root {
       --primary-color: #006834;
@@ -311,7 +313,10 @@
 <body>
   <header>
     <div class="logo-container">
-      <img src="{{ asset('assets/CCIS-Logo-Official.png') }}" alt="College Logo" class="logo" />
+      <img
+        src="{{ asset('assets/CCIS-Logo-Official.png') }}"
+        alt="College Logo"
+        class="logo" />
       <div class="header-text">
         <h1>College of Computing & Information Sciences</h1>
         <p>Faculty Profile Management System</p>
@@ -325,7 +330,7 @@
         <li><a href="#">Departments</a></li>
         <li><a href="#">Research</a></li>
         <li>
-          <a href="faculty/login.php" class="login-btn">Faculty Login</a>
+          <a href="login.php" class="login-btn">Faculty Login</a>
         </li>
       </ul>
     </nav>
@@ -339,7 +344,9 @@
         academic contributions across our college.
       </p>
       <div class="search-bar">
-        <input type="text" placeholder="Search faculty members, research areas, or courses..." />
+        <input
+          type="text"
+          placeholder="Search faculty members, research areas, or courses..." />
         <button><i class="fas fa-search"></i> Search</button>
       </div>
     </section>
