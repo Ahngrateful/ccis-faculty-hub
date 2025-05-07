@@ -1,31 +1,31 @@
 <?php
-    // Start session
-    session_start();
-    // Database connection
+// Start session
+session_start();
+// Database connection
 require_once("dbconn.php");
-    
-    // Check if user is logged in
-    if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-        header("Location: admin-login.php");
-        exit();
-    }
-    
-    
-    // Get compliance stats
-    $total_faculty = 0;
-    $full_compliance = 0;
-    $partial_compliance = 0;
-    $low_compliance = 0;
-    
-    $query = "SELECT COUNT(*) as total FROM faculty WHERE role_id = '1'";
-    $result = mysqli_query($conn, $query);
-    if ($result && $row = mysqli_fetch_assoc($result)) {
-        $total_faculty = $row['total'];
-    }
-    
-    // Get faculty compliance data
-    $faculty_compliance = [];
-    $query = "SELECT 
+
+// Check if user is logged in
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header("Location: admin-login.php");
+    exit();
+}
+
+
+// Get compliance stats
+$total_faculty = 0;
+$full_compliance = 0;
+$partial_compliance = 0;
+$low_compliance = 0;
+
+$query = "SELECT COUNT(*) as total FROM faculty WHERE role_id = '1'";
+$result = mysqli_query($conn, $query);
+if ($result && $row = mysqli_fetch_assoc($result)) {
+    $total_faculty = $row['total'];
+}
+
+// Get faculty compliance data
+$faculty_compliance = [];
+$query = "SELECT 
                 u.faculty_id, 
                 u.first_name, 
                 u.last_name,
@@ -44,37 +44,38 @@ require_once("dbconn.php");
                 u.faculty_id
               ORDER BY 
                 (COUNT(DISTINCT CASE WHEN s.status = 'approved' THEN s.requirement_id END) / COUNT(DISTINCT r.requirement_id)) DESC";
-    
-    $result = mysqli_query($conn, $query);
-    
-    if ($result) {
-        while ($row = mysqli_fetch_assoc($result)) {
-            $total_reqs = $row['total_requirements'] > 0 ? $row['total_requirements'] : 1; // Avoid division by zero
-            $compliance_percentage = ($row['completed_requirements'] / $total_reqs) * 100;
-            
-            // Update counters
-            if ($compliance_percentage >= 90) {
-                $full_compliance++;
-            } elseif ($compliance_percentage >= 60) {
-                $partial_compliance++;
-            } else {
-                $low_compliance++;
-            }
-            
-            $faculty_compliance[] = [
-                'id' => $row['faculty_id'],
-                'name' => $row['first_name'] . ' ' . $row['last_name'],
-                'email' => $row['email'],
-                'role_id' => $row['role_id'],
-                'total_requirements' => $row['total_requirements'],
-                'completed_requirements' => $row['completed_requirements'],
-                'compliance_percentage' => $compliance_percentage
-            ];
+
+$result = mysqli_query($conn, $query);
+
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $total_reqs = $row['total_requirements'] > 0 ? $row['total_requirements'] : 1; // Avoid division by zero
+        $compliance_percentage = ($row['completed_requirements'] / $total_reqs) * 100;
+
+        // Update counters
+        if ($compliance_percentage >= 90) {
+            $full_compliance++;
+        } elseif ($compliance_percentage >= 60) {
+            $partial_compliance++;
+        } else {
+            $low_compliance++;
         }
+
+        $faculty_compliance[] = [
+            'id' => $row['faculty_id'],
+            'name' => $row['first_name'] . ' ' . $row['last_name'],
+            'email' => $row['email'],
+            'role_id' => $row['role_id'],
+            'total_requirements' => $row['total_requirements'],
+            'completed_requirements' => $row['completed_requirements'],
+            'compliance_percentage' => $compliance_percentage
+        ];
     }
-    ?>
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -378,7 +379,8 @@ require_once("dbconn.php");
             margin-top: 20px;
         }
 
-        th, td {
+        th,
+        td {
             padding: 15px;
             text-align: left;
         }
@@ -468,7 +470,8 @@ require_once("dbconn.php");
                 overflow: hidden;
             }
 
-            .sidebar h3, .sidebar a span {
+            .sidebar h3,
+            .sidebar a span {
                 display: none;
             }
 
@@ -510,10 +513,39 @@ require_once("dbconn.php");
                 padding: 20px;
             }
         }
+
+        .notification-bell {
+            position: relative;
+            padding: 12px;
+            border-radius: 50%;
+            background-color: var(--gray-light);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .notification-bell:hover {
+            background-color: var(--primary-light);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 15px;
+            height: 15px;
+            background-color: #ff5252;
+            border-radius: 50%;
+            font-size: 0.6rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
+
 <body>
-    
+
     <div class="container">
         <div class="sidebar">
             <div class="sidebar-header">
@@ -524,9 +556,12 @@ require_once("dbconn.php");
                 <a href="dashboard.php"><i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span></a>
                 <a href="approvals.php"><i class="fa-solid fa-check-to-slot"></i> <span>Approvals</span></a>
                 <a href="reports.php"><i class="fa-solid fa-chart-pie"></i> <span>Reports</span></a>
-                <a href="faculty_management.php"><i class="fa-solid fa-users-gear"></i> <span>Faculty Management</span></a>
-                <a href="ched_compli-audit.php" class="active"><i class="fa-solid fa-clipboard-check"></i> <span>CHED Compliance Audit</span></a>
-                <a href="logout.php" class="logout"><i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span></a>
+                <a href="faculty_management.php"><i class="fa-solid fa-users-gear"></i> <span>Faculty
+                        Management</span></a>
+                <a href="ched_compli-audit.php" class="active"><i class="fa-solid fa-clipboard-check"></i> <span>CHED
+                        Compliance Audit</span></a>
+                <a href="logout.php" class="logout"><i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span></a>
             </div>
         </div>
         <div class="content">
@@ -542,7 +577,8 @@ require_once("dbconn.php");
                     <div class="user-profile">
                         <div class="user-avatar"><?php echo substr($_SESSION['admin_name'] ?? 'A', 0, 1); ?></div>
                         <div>
-                            <p style="font-weight: 600; margin: 0;"><?php echo $_SESSION['admin_name'] ?? 'Admin User'; ?></p>
+                            <p style="font-weight: 600; margin: 0;">
+                                <?php echo $_SESSION['admin_name'] ?? 'Admin User'; ?></p>
                             <p style="font-size: 0.8rem; color: var(--text-light); margin: 0;">Administrator</p>
                         </div>
                     </div>
@@ -602,32 +638,37 @@ require_once("dbconn.php");
                             </thead>
                             <tbody>
                                 <?php foreach ($faculty_compliance as $faculty): ?>
-                                <tr>
-                                    <td>
-                                        <strong><?php echo htmlspecialchars($faculty['name']); ?></strong><br>
-                                        <small><?php echo htmlspecialchars($faculty['role_id']); ?></small>
-                                    </td>
-                                    <td><?php echo number_format($faculty['compliance_percentage'], 1); ?>%</td>
-                                    <td><?php echo $faculty['completed_requirements']; ?> / <?php echo $faculty['total_requirements']; ?></td>
-                                    <td>
-                                        <div class="progress-container">
-                                            <div class="progress-bar <?php 
-                                                if ($faculty['compliance_percentage'] >= 90) echo 'high';
-                                                else if ($faculty['compliance_percentage'] >= 60) echo 'medium';
-                                                else echo 'low';
-                                            ?>" style="width: <?php echo $faculty['compliance_percentage']; ?>%"></div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <a href="faculty_details.php?id=<?php echo $faculty['id']; ?>" style="color: var(--primary); text-decoration: none;">
-                                            <i class="fa-solid fa-eye"></i> View Details
-                                        </a>
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td>
+                                            <strong><?php echo htmlspecialchars($faculty['name']); ?></strong><br>
+                                            <small><?php echo htmlspecialchars($faculty['role_id']); ?></small>
+                                        </td>
+                                        <td><?php echo number_format($faculty['compliance_percentage'], 1); ?>%</td>
+                                        <td><?php echo $faculty['completed_requirements']; ?> /
+                                            <?php echo $faculty['total_requirements']; ?></td>
+                                        <td>
+                                            <div class="progress-container">
+                                                <div class="progress-bar <?php
+                                                if ($faculty['compliance_percentage'] >= 90)
+                                                    echo 'high';
+                                                else if ($faculty['compliance_percentage'] >= 60)
+                                                    echo 'medium';
+                                                else
+                                                    echo 'low';
+                                                ?>" style="width: <?php echo $faculty['compliance_percentage']; ?>%"></div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="faculty_details.php?id=<?php echo $faculty['id']; ?>"
+                                                style="color: var(--primary); text-decoration: none;">
+                                                <i class="fa-solid fa-eye"></i> View Details
+                                            </a>
+                                        </td>
+                                    </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
-                        
+
                         <button onclick="exportReport()">
                             <i class="fa-solid fa-file-export"></i> Export Compliance Report
                         </button>
@@ -635,11 +676,12 @@ require_once("dbconn.php");
                 </div>
             </div>
             <div class="footer">
-                <p> 2025 University of Makati - CCIS Faculty Project Management System v1.0 | <a href="#">Help Center</a> | <a href="#">Contact Support</a></p>
+                <p> 2025 University of Makati - CCIS Faculty Project Management System v1.0 | <a href="#">Help
+                        Center</a> | <a href="#">Contact Support</a></p>
             </div>
         </div>
     </div>
-    
+
     <script>
         function exportReport() {
             alert('Generating CHED compliance report. The file will be downloaded shortly.');
@@ -648,4 +690,5 @@ require_once("dbconn.php");
         }
     </script>
 </body>
+
 </html>

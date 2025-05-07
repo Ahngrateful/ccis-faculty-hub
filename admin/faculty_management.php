@@ -9,11 +9,27 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     header("Location: admin-login.php");
     exit();
 }
-$query = "SELECT * FROM faculty";
+
+// Fetch all faculty members
+$query = "SELECT f.*, r.role_name
+          FROM faculty f
+          JOIN roles r ON f.role_id = r.roles_id
+          ORDER BY f.faculty_id";
 $result = mysqli_query($conn, $query);
 
-?>
+// Check for query execution success
+if (!$result) {
+    $error_message = "Error fetching faculty data: " . mysqli_error($conn);
+}
 
+// Store faculty data in array
+$faculty_members = [];
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $faculty_members[] = $row;
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -278,20 +294,79 @@ $result = mysqli_query($conn, $query);
         /* Filters */
         .filters {
             display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
+            justify-content: space-between;
             align-items: center;
             background-color: var(--white);
             padding: 20px;
             border-radius: var(--border-radius);
             box-shadow: var(--shadow-sm);
+            margin-bottom: 15px;
+        }
+
+        .filters-left {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            flex: 1;
+        }
+
+        .filters-right {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .filter-title {
             font-weight: 600;
             color: var(--primary);
-            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        /* Filter Stats */
+        .filter-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .filter-stat-item {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            padding: 15px 20px;
+            box-shadow: var(--shadow-sm);
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: var(--transition);
+            border-top: 3px solid var(--primary);
+        }
+
+        .filter-stat-item:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .filter-stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .filter-stat-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         select,
@@ -359,11 +434,59 @@ $result = mysqli_query($conn, $query);
         }
 
         /* Table Styles */
+        .table-container {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .table-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .table-loader.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(0, 104, 52, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
         table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-bottom: 30px;
         }
 
         table,
@@ -372,15 +495,12 @@ $result = mysqli_query($conn, $query);
             border: none;
         }
 
-        table {
-            box-shadow: var(--shadow-sm);
-            border-radius: var(--border-radius);
-            overflow: hidden;
-        }
-
         thead {
             background: linear-gradient(135deg, var(--primary) 0%, #005229 100%);
             color: white;
+            position: sticky;
+            top: 0;
+            z-index: 5;
         }
 
         th {
@@ -389,19 +509,72 @@ $result = mysqli_query($conn, $query);
             font-weight: 600;
             font-size: 0.95rem;
             letter-spacing: 0.3px;
+            position: relative;
         }
 
-        tr {
-            background-color: var(--primary);
+        th:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        th:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        th i {
+            margin-left: 5px;
+            opacity: 0.7;
+        }
+
+        tbody tr {
+            background-color: var(--white);
             transition: var(--transition);
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        tr.filtered-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        tr.filtered-out {
+            animation: fadeOut 0.5s ease forwards;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(10px);
+            }
         }
 
         tr:hover {
-            background-color: rgba(0, 104, 52, 0.02);
+            background-color: rgba(0, 104, 52, 0.05);
         }
 
         td {
-            background-color: var(--white);
             padding: 16px 20px;
             font-size: 0.95rem;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -410,6 +583,66 @@ $result = mysqli_query($conn, $query);
 
         tr:last-child td {
             border-bottom: none;
+        }
+
+        /* Animation for filter stats */
+        .filter-stat-item {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .filter-stat-item.animate-in {
+            animation: slideUp 0.5s ease forwards;
+            animation-delay: calc(var(--item-index, 0) * 0.1s);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Sorted rows animation */
+        tr.sorted {
+            animation: fadeInSort 0.5s ease forwards;
+        }
+
+        @keyframes fadeInSort {
+            from {
+                opacity: 0.5;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Clear filters button */
+        .clear-filters {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            color: #666;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .clear-filters:hover {
+            background-color: #e9ecef;
+            color: #333;
         }
 
         /* Status Styles */
@@ -738,7 +971,7 @@ $result = mysqli_query($conn, $query);
     <div class="container">
         <div class="sidebar">
             <div class="sidebar-header">
-                <img src="{{ asset('assets/CCIS-Logo-Official.png') }}" alt="College Logo" class="logo">
+                <img src="../assets/CCIS-Logo-Official.png" alt="College Logo" class="logo">
                 <h3><i>Faculty Project Management System</i></h3>
             </div>
             <div class="nav-links">
@@ -774,259 +1007,313 @@ $result = mysqli_query($conn, $query);
             </div>
             <div class="main-content">
                 <h2>Faculty Management</h2>
+
+                <?php
+                // Display success message if set
+                if (isset($_SESSION['success_message'])) {
+                    echo '<div class="alert alert-success" style="background-color: #d4edda; color: #155724; padding: 15px; margin-bottom: 20px; border-radius: 5px;">';
+                    echo '<i class="fa-solid fa-check-circle"></i> ' . $_SESSION['success_message'];
+                    echo '</div>';
+                    unset($_SESSION['success_message']);
+                }
+
+                // Display error message if set
+                if (isset($_SESSION['error_message'])) {
+                    echo '<div class="alert alert-danger" style="background-color: #f8d7da; color: #721c24; padding: 15px; margin-bottom: 20px; border-radius: 5px;">';
+                    echo '<i class="fa-solid fa-exclamation-circle"></i> ' . $_SESSION['error_message'];
+                    echo '</div>';
+                    unset($_SESSION['error_message']);
+                }
+                ?>
                 <div class="filters">
-                    <div class="filter-title">Filter by:</div>
-                    <select>
-                        <option>All Status</option>
-                        <option>Active</option>
-                        <option>Inactive</option>
-                    </select>
-                    <div class="search-box">
-                        <i class="fa-solid fa-search"></i>
-                        <input type="text" placeholder="Search by ID, name or email..." id="searchInput">
+                    <div class="filters-left">
+                        <div class="filter-group">
+                            <div class="filter-title">Filter by:</div>
+                            <select id="statusFilter">
+                                <option value="all">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <div class="filter-title">Role:</div>
+                            <select id="roleFilter">
+                                <option value="all">All Roles</option>
+                                <option value="1">Faculty</option>
+                                <option value="2">Admin</option>
+                            </select>
+                        </div>
+                        <div class="search-box">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="text" placeholder="Search by ID, name or email..." id="searchInput">
+                        </div>
+                        <button id="clearFilters" class="clear-filters">
+                            <i class="fa-solid fa-filter-circle-xmark"></i> Clear Filters
+                        </button>
                     </div>
-                    <button id="addFacultyBtn"><i class="fa-solid fa-user-plus"></i> Add New Faculty</button>
+                    <div class="filters-right">
+                        <button id="addFacultyBtn"><i class="fa-solid fa-user-plus"></i> Add New Faculty</button>
+                    </div>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Faculty ID <i class="fa-solid fa-key" style="color: #ffde26;"></i></th>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Email</th>
-                            <th>Account Creation Date</th>
-                            <th>Role ID</th>
-                            <th>Status</th>
-                            <th>Profile Image</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>F001</td>
-                            <td>John</td>
-                            <td>Doe</td>
-                            <td>john.doe@umak.edu.ph</td>
-                            <td>2023-01-15</td>
-                            <td>1</td>
-                            <td><span class="status status-active"><i class="fa-solid fa-circle-check"></i>
-                                    Active</span></td>
-                            <td><img src="{{ asset('images/placeholder.jpg') }}" alt="Profile"
-                                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"></td>
-                            <td class="actions">
-                                <a href="#" class="btn btn-edit" id="editFacultyBtn"><i
-                                        class="fa-solid fa-pen-to-square"></i> Edit</a>
-                                <a href="#" class="btn btn-deactivate" id="activateBtn"><i
-                                        class="fa-solid fa-user-slash"></i> Deactivate</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>F002</td>
-                            <td>Jane</td>
-                            <td>Smith</td>
-                            <td>jane.smith@umak.edu.ph</td>
-                            <td>2023-02-20</td>
-                            <td>1</td>
-                            <td><span class="status status-inactive"><i class="fa-solid fa-circle-xmark"></i>
-                                    Inactive</span></td>
-                            <td><img src="{{ asset('images/placeholder.jpg') }}" alt="Profile"
-                                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"></td>
-                            <td class="actions">
-                                <a href="#" class="btn btn-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
-                                <a href="#" class="btn btn-activate"><i class="fa-solid fa-user-check"></i> Activate</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>F003</td>
-                            <td>Robert</td>
-                            <td>Johnson</td>
-                            <td>robert.johnson@umak.edu.ph</td>
-                            <td>2023-03-10</td>
-                            <td>2</td>
-                            <td><span class="status status-active"><i class="fa-solid fa-circle-check"></i>
-                                    Active</span></td>
-                            <td><img src="{{ asset('images/placeholder.jpg') }}" alt="Profile"
-                                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"></td>
-                            <td class="actions">
-                                <a href="#" class="btn btn-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
-                                <a href="#" class="btn btn-deactivate"><i class="fa-solid fa-user-slash"></i>
-                                    Deactivate</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>F004</td>
-                            <td>Maria</td>
-                            <td>Garcia</td>
-                            <td>maria.garcia@umak.edu.ph</td>
-                            <td>2023-04-05</td>
-                            <td>1</td>
-                            <td><span class="status status-active"><i class="fa-solid fa-circle-check"></i>
-                                    Active</span></td>
-                            <td><img src="{{ asset('images/placeholder.jpg') }}" alt="Profile"
-                                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"></td>
-                            <td class="actions">
-                                <a href="#" class="btn btn-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
-                                <a href="#" class="btn btn-deactivate"><i class="fa-solid fa-user-slash"></i>
-                                    Deactivate</a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                <div class="filter-stats">
+                    <div class="filter-stat-item">
+                        <span id="totalFaculty" class="filter-stat-number">0</span>
+                        <span class="filter-stat-label">Total Faculty</span>
+                    </div>
+                    <div class="filter-stat-item">
+                        <span id="activeFaculty" class="filter-stat-number">0</span>
+                        <span class="filter-stat-label">Active</span>
+                    </div>
+                    <div class="filter-stat-item">
+                        <span id="inactiveFaculty" class="filter-stat-number">0</span>
+                        <span class="filter-stat-label">Inactive</span>
+                    </div>
+                    <div class="filter-stat-item">
+                        <span id="filteredCount" class="filter-stat-number">0</span>
+                        <span class="filter-stat-label">Filtered Results</span>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div class="table-loader">
+                        <div class="loader-spinner"></div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-sort="id">Faculty ID <i class="fa-solid fa-sort"></i></th>
+                                <th data-sort="first_name">First Name <i class="fa-solid fa-sort"></i></th>
+                                <th data-sort="last_name">Last Name <i class="fa-solid fa-sort"></i></th>
+                                <th data-sort="email">Email <i class="fa-solid fa-sort"></i></th>
+                                <th data-sort="date">Account Creation <i class="fa-solid fa-sort"></i></th>
+                                <th data-sort="role">Role <i class="fa-solid fa-sort"></i></th>
+                                <th data-sort="status">Status <i class="fa-solid fa-sort"></i></th>
+                                <th>Profile Image</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($faculty_members)): ?>
+                                <tr>
+                                    <td colspan="9" style="text-align: center;">No faculty members found</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($faculty_members as $faculty): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($faculty['faculty_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($faculty['first_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($faculty['last_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($faculty['email']); ?></td>
+                                        <td><?php echo htmlspecialchars($faculty['account_creation_date']); ?></td>
+                                        <td><?php echo htmlspecialchars($faculty['role_name']); ?></td>
+                                        <td>
+                                            <?php if (strtolower($faculty['status']) == 'active'): ?>
+                                                <span class="status status-active"><i class="fa-solid fa-circle-check"></i>
+                                                    Active</span>
+                                            <?php else: ?>
+                                                <span class="status status-inactive"><i class="fa-solid fa-circle-xmark"></i>
+                                                    Inactive</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($faculty['profile_image'])): ?>
+                                                <img src="<?php echo htmlspecialchars($faculty['profile_image']); ?>" alt="Profile"
+                                                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                            <?php else: ?>
+                                                <img src="../assets/placeholder.jpg" alt="Profile"
+                                                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="actions">
+                                            <a href="#" class="btn btn-edit"
+                                                data-faculty-id="<?php echo htmlspecialchars($faculty['faculty_id']); ?>">
+                                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                                            </a>
+                                            <?php if (strtolower($faculty['status']) == 'active'): ?>
+                                                <a href="#" class="btn btn-deactivate"
+                                                    data-faculty-id="<?php echo htmlspecialchars($faculty['faculty_id']); ?>">
+                                                    <i class="fa-solid fa-user-slash"></i> Deactivate
+                                                </a>
+                                                <noscript>
+                                                    <a href="faculty_management_process.php?action=toggle_status&faculty_id=<?php echo htmlspecialchars($faculty['faculty_id']); ?>"
+                                                        class="btn btn-deactivate">
+                                                        <i class="fa-solid fa-user-slash"></i> Deactivate (No JS)
+                                                    </a>
+                                                </noscript>
+                                            <?php else: ?>
+                                                <a href="#" class="btn btn-activate"
+                                                    data-faculty-id="<?php echo htmlspecialchars($faculty['faculty_id']); ?>">
+                                                    <i class="fa-solid fa-user-check"></i> Activate
+                                                </a>
+                                                <noscript>
+                                                    <a href="faculty_management_process.php?action=toggle_status&faculty_id=<?php echo htmlspecialchars($faculty['faculty_id']); ?>"
+                                                        class="btn btn-activate">
+                                                        <i class="fa-solid fa-user-check"></i> Activate (No JS)
+                                                    </a>
+                                                </noscript>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- add faculty modal-->
-            <div id="addFacultyModal" class="modal">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-                    <h2><i class="fa-solid fa-user-plus"></i> Add New Faculty</h2>
-                    <form action="{{ url('/admin/faculty-management/store') }}" method="POST"
-                        enctype="multipart/form-data">
-                        @csrf
-                        <div class="image-upload">
-                            <label>Profile Picture</label>
-                            <img src="{{ asset('images/placeholder.jpg') }}" class="img-thumbnail" alt="Profile Image"
-                                id="employee_image">
-                            <input type="file" class="form-control" name="profile_image" id="imageUpload"
-                                accept="image/*">
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="faculty_id">Faculty ID:</label>
-                                <input type="text" name="faculty_id" id="faculty_id" required>
+                <!-- add faculty modal-->
+                <div id="addFacultyModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h2><i class="fa-solid fa-user-plus"></i> Add New Faculty</h2>
+                        <form id="addFacultyForm" action="faculty_management_process.php?action=add" method="POST"
+                            enctype="multipart/form-data">
+                            <div class="image-upload">
+                                <label>Profile Picture</label>
+                                <img src="../assets/placeholder.jpg" class="img-thumbnail" alt="Profile Image"
+                                    id="employee_image">
+                                <input type="file" class="form-control" name="profile_image" id="imageUpload"
+                                    accept="image/*">
                             </div>
-                        </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="first_name">First Name:</label>
-                                <input type="text" name="first_name" id="first_name" required>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="faculty_id">Faculty ID:</label>
+                                    <input type="text" name="faculty_id" id="faculty_id" required>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="last_name">Last Name:</label>
-                                <input type="text" name="last_name" id="last_name" required>
-                            </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label for="email">Email Address:</label>
-                            <input type="email" name="email" id="email" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="password">Password:</label>
-                            <div style="display: flex; gap: 10px;">
-                                <input type="text" name="password" id="password" readonly style="flex-grow: 1;">
-                                <button type="button" id="generatePasswordBtn"
-                                    style="white-space: nowrap;">Generate</button>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="first_name">First Name:</label>
+                                    <input type="text" name="first_name" id="first_name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="last_name">Last Name:</label>
+                                    <input type="text" name="last_name" id="last_name" required>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="form-row">
                             <div class="form-group">
-                                <label for="account_creation_date">Account Creation Date:</label>
-                                <input type="date" name="account_creation_date" id="account_creation_date"
-                                    value="<?php echo date('Y-m-d'); ?>" required>
+                                <label for="email">Email Address:</label>
+                                <input type="email" name="email" id="email" required>
                             </div>
+
                             <div class="form-group">
-                                <label for="role_id">Role:</label>
-                                <select name="role_id" id="role_id" required>
-                                    <option value="">Select Role</option>
-                                    <option value="1">Faculty</option>
-                                    <option value="2">Admin</option>
+                                <label for="password">Password:</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" name="password" id="password" readonly style="flex-grow: 1;">
+                                    <button type="button" id="generatePasswordBtn"
+                                        style="white-space: nowrap;">Generate</button>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="account_creation_date">Account Creation Date:</label>
+                                    <input type="date" name="account_creation_date" id="account_creation_date"
+                                        value="<?php echo date('Y-m-d'); ?>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="role_id">Role:</label>
+                                    <select name="role_id" id="role_id" required>
+                                        <option value="">Select Role</option>
+                                        <option value="1">Faculty</option>
+                                        <option value="2">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="status">Status:</label>
+                                <select name="status" id="status" required>
+                                    <option value="Active" selected>Active</option>
+                                    <option value="Inactive">Inactive</option>
                                 </select>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label for="status">Status:</label>
-                            <select name="status" id="status" required>
-                                <option value="Active" selected>Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                        </div>
+                            <div id="addFacultyErrors" class="form-errors"
+                                style="color: #721c24; background-color: #f8d7da; padding: 10px; margin-bottom: 15px; border-radius: 5px; display: none;">
+                            </div>
 
-                        <button type="submit">Add Faculty</button>
-                    </form>
+                            <button type="submit" id="addFacultySubmitBtn">Add Faculty</button>
+                        </form>
+                    </div>
                 </div>
-            </div>
 
-            <!--edit faculty modal-->
-            <div id="editFacultyModal" class="modal">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-                    <h2><i class="fa-solid fa-pen-to-square"></i> Edit Faculty Profile</h2>
-                    <form action="{{ url('/admin/faculty-management/edit') }}" method="POST"
-                        enctype="multipart/form-data">
-                        @csrf
+                <!--edit faculty modal-->
+                <div id="editFacultyModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h2><i class="fa-solid fa-pen-to-square"></i> Edit Faculty Profile</h2>
+                        <form action="faculty_management_process.php?action=edit" method="POST"
+                            enctype="multipart/form-data">
 
-                        <div class="image-upload">
-                            <label>Profile Picture</label>
-                            <img src="{{ asset('images/placeholder.jpg') }}" class="img-thumbnail" alt="Profile Image"
-                                id="edit_employee_image">
-                            <input type="file" class="form-control" name="profile_image" id="edit_imageUpload"
-                                accept="image/*">
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="edit_faculty_id">Faculty ID:</label>
-                                <input type="text" name="faculty_id" id="edit_faculty_id" required readonly>
+                            <div class="image-upload">
+                                <label>Profile Picture</label>
+                                <img src="../assets/placeholder.jpg" class="img-thumbnail" alt="Profile Image"
+                                    id="edit_employee_image">
+                                <input type="file" class="form-control" name="profile_image" id="edit_imageUpload"
+                                    accept="image/*">
                             </div>
-                        </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="edit_first_name">First Name:</label>
-                                <input type="text" name="first_name" id="edit_first_name" required>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="edit_faculty_id">Faculty ID:</label>
+                                    <input type="text" name="faculty_id" id="edit_faculty_id" required readonly>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="edit_last_name">Last Name:</label>
-                                <input type="text" name="last_name" id="edit_last_name" required>
-                            </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label for="edit_email">Email Address:</label>
-                            <input type="email" name="email" id="edit_email" required>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="edit_account_creation_date">Account Creation Date:</label>
-                                <input type="date" name="account_creation_date" id="edit_account_creation_date"
-                                    required>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="edit_first_name">First Name:</label>
+                                    <input type="text" name="first_name" id="edit_first_name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit_last_name">Last Name:</label>
+                                    <input type="text" name="last_name" id="edit_last_name" required>
+                                </div>
                             </div>
+
                             <div class="form-group">
-                                <label for="edit_role_id">Role:</label>
-                                <select name="role_id" id="edit_role_id" required>
-                                    <option value="">Select Role</option>
-                                    <option value="1">Faculty</option>
-                                    <option value="2">Admin</option>
+                                <label for="edit_email">Email Address:</label>
+                                <input type="email" name="email" id="edit_email" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="edit_account_creation_date">Account Creation Date:</label>
+                                    <input type="date" name="account_creation_date" id="edit_account_creation_date"
+                                        required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit_role_id">Role:</label>
+                                    <select name="role_id" id="edit_role_id" required>
+                                        <option value="">Select Role</option>
+                                        <option value="1">Faculty</option>
+                                        <option value="2">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit_status">Status:</label>
+                                <select name="status" id="edit_status" required>
+                                    <option value="">Select Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
                                 </select>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label for="edit_status">Status:</label>
-                            <select name="status" id="edit_status" required>
-                                <option value="">Select Status</option>
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="submit-btn">Update Faculty</button>
-                    </form>
+                            <button type="submit" class="submit-btn">Update Faculty</button>
+                        </form>
+                    </div>
                 </div>
-            </div>
 
-            <div class="footer">
-                <p> 2025 University of Makati - CCIS Faculty Project Management System v1.0 | <a href="#">Help
-                        Center</a> | <a href="#">Contact Support</a></p>
+                <div class="footer">
+                    <p> 2025 University of Makati - CCIS Faculty Project Management System v1.0 | <a href="#">Help
+                            Center</a> | <a href="#">Contact Support</a></p>
+                </div>
             </div>
         </div>
-    </div>
 </body>
 
 <script>
@@ -1047,72 +1334,202 @@ $result = mysqli_query($conn, $query);
 
     // Edit Faculty Modal functionality
     const editModal = document.getElementById('editFacultyModal');
-    const editBtns = document.querySelectorAll('.btn-edit');
     const editSpan = editModal.querySelector('.close');
 
-    editBtns.forEach(btn => {
-        btn.onclick = function (e) {
+    // Use event delegation for dynamically added elements
+    document.addEventListener('click', function (e) {
+        // Handle edit button clicks
+        if (e.target.closest('.btn-edit')) {
             e.preventDefault();
+            const btn = e.target.closest('.btn-edit');
+            const facultyId = btn.getAttribute('data-faculty-id');
 
-            // In a real application, you would fetch faculty data from the server using the faculty ID
-            // For now, we'll use placeholder data for demonstration
-            const row = this.closest('tr');
-            const facultyId = row.querySelector('td:nth-child(1)').textContent;
-            const firstName = row.querySelector('td:nth-child(2)').textContent;
-            const lastName = row.querySelector('td:nth-child(3)').textContent;
-            const email = row.querySelector('td:nth-child(4)').textContent;
-            const accountCreationDate = row.querySelector('td:nth-child(5)').textContent;
-            const role = row.querySelector('td:nth-child(6)').textContent;
-            const status = row.querySelector('td:nth-child(7) .status').textContent.includes('Active') ? 'Active' : 'Inactive';
-
-            // Populate the edit form
-            document.getElementById('edit_faculty_id').value = facultyId;
-            document.getElementById('edit_first_name').value = firstName;
-            document.getElementById('edit_last_name').value = lastName;
-            document.getElementById('edit_email').value = email;
-            document.getElementById('edit_account_creation_date').value = accountCreationDate;
-            document.getElementById('edit_role_id').value = role === 'Faculty' ? '1' : '2';
-            document.getElementById('edit_status').value = status;
+            // Show loading state
+            document.getElementById('edit_faculty_id').value = "Loading...";
+            document.getElementById('edit_first_name').value = "Loading...";
+            document.getElementById('edit_last_name').value = "Loading...";
+            document.getElementById('edit_email').value = "Loading...";
 
             // Show the modal
             editModal.style.display = "block";
             document.body.style.overflow = "hidden";
-        };
+
+            // Create a new XMLHttpRequest to fetch faculty data
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `faculty_management_process.php?action=get_faculty&faculty_id=${facultyId}`, true);
+
+            xhr.onload = function () {
+                if (this.status === 200) {
+                    try {
+                        const faculty = JSON.parse(this.responseText);
+
+                        // Format date for input (YYYY-MM-DD)
+                        let formattedDate = faculty.account_creation_date;
+
+                        // Try to parse the date regardless of format
+                        try {
+                            const dateObj = new Date(formattedDate);
+                            if (!isNaN(dateObj.getTime())) {
+                                // Valid date, format as YYYY-MM-DD
+                                const year = dateObj.getFullYear();
+                                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                                const day = String(dateObj.getDate()).padStart(2, '0');
+                                formattedDate = `${year}-${month}-${day}`;
+                            }
+                        } catch (e) {
+                            console.error('Error formatting date:', e);
+                        }
+
+                        // Populate the edit form with data from the server
+                        document.getElementById('edit_faculty_id').value = faculty.faculty_id;
+                        document.getElementById('edit_first_name').value = faculty.first_name;
+                        document.getElementById('edit_last_name').value = faculty.last_name;
+                        document.getElementById('edit_email').value = faculty.email;
+                        document.getElementById('edit_account_creation_date').value = formattedDate;
+                        document.getElementById('edit_role_id').value = faculty.role_id;
+                        document.getElementById('edit_status').value = faculty.status.charAt(0).toUpperCase() + faculty.status.slice(1);
+
+                        // Update profile image if available
+                        if (faculty.profile_image) {
+                            document.getElementById('edit_employee_image').src = faculty.profile_image;
+                        } else {
+                            document.getElementById('edit_employee_image').src = '../assets/placeholder.jpg';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        alert('Error loading faculty data. Please try again.');
+                    }
+                } else {
+                    alert('Error loading faculty data. Please try again.');
+                }
+            };
+
+            xhr.onerror = function () {
+                alert('Error loading faculty data. Please try again.');
+            };
+
+            xhr.send();
+        }
+
+        // Handle activate/deactivate button clicks
+        if (e.target.closest('.btn-activate') || e.target.closest('.btn-deactivate')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-activate') || e.target.closest('.btn-deactivate');
+            const row = btn.closest('tr');
+            const facultyId = btn.getAttribute('data-faculty-id');
+            const statusCell = row.querySelector('td:nth-child(7) .status');
+            const isActive = statusCell.textContent.includes('Active');
+
+            // New status will be the opposite of current status
+            const newStatus = isActive ? 'inactive' : 'active';
+
+            // Show loading state
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            // Send AJAX request to update status
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'faculty_management_process.php?action=update_status', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            xhr.onload = function () {
+                if (this.status === 200) {
+                    try {
+                        const response = JSON.parse(this.responseText);
+
+                        if (response.success) {
+                            // Update UI based on new status
+                            if (newStatus === 'inactive') {
+                                // Changed to inactive
+                                statusCell.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Inactive';
+                                statusCell.className = 'status status-inactive';
+                                btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Activate';
+                                btn.className = 'btn btn-activate';
+                            } else {
+                                // Changed to active
+                                statusCell.innerHTML = '<i class="fa-solid fa-circle-check"></i> Active';
+                                statusCell.className = 'status status-active';
+                                btn.innerHTML = '<i class="fa-solid fa-user-slash"></i> Deactivate';
+                                btn.className = 'btn btn-deactivate';
+                            }
+                            btn.setAttribute('data-faculty-id', facultyId);
+
+                            // Show success message
+                            const successMessage = response.message || 'Faculty status updated successfully';
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = 'alert alert-success';
+                            messageDiv.style.cssText = 'background-color: #d4edda; color: #155724; padding: 15px; margin-bottom: 20px; border-radius: 5px; position: fixed; top: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 8px rgba(0,0,0,0.1);';
+                            messageDiv.innerHTML = '<i class="fa-solid fa-check-circle"></i> ' + successMessage;
+                            document.body.appendChild(messageDiv);
+
+                            // Remove the message after 3 seconds
+                            setTimeout(() => {
+                                messageDiv.style.opacity = '0';
+                                messageDiv.style.transition = 'opacity 0.5s ease';
+                                setTimeout(() => {
+                                    document.body.removeChild(messageDiv);
+                                }, 500);
+                            }, 3000);
+                        } else {
+                            alert('Error: ' + (response.error || 'Failed to update status'));
+                            // Reset button to original state
+                            if (isActive) {
+                                btn.innerHTML = '<i class="fa-solid fa-user-slash"></i> Deactivate';
+                                btn.className = 'btn btn-deactivate';
+                            } else {
+                                btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Activate';
+                                btn.className = 'btn btn-activate';
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        alert('Error updating status. Please try again.');
+                        // Reset button to original state
+                        if (isActive) {
+                            btn.innerHTML = '<i class="fa-solid fa-user-slash"></i> Deactivate';
+                            btn.className = 'btn btn-deactivate';
+                        } else {
+                            btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Activate';
+                            btn.className = 'btn btn-activate';
+                        }
+                    }
+                } else {
+                    alert('Error updating status. Please try again.');
+                    // Reset button to original state
+                    if (isActive) {
+                        btn.innerHTML = '<i class="fa-solid fa-user-slash"></i> Deactivate';
+                        btn.className = 'btn btn-deactivate';
+                    } else {
+                        btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Activate';
+                        btn.className = 'btn btn-activate';
+                    }
+                }
+
+                btn.disabled = false;
+            };
+
+            xhr.onerror = function () {
+                alert('Error updating status. Please try again.');
+                // Reset button to original state
+                if (isActive) {
+                    btn.innerHTML = '<i class="fa-solid fa-user-slash"></i> Deactivate';
+                    btn.className = 'btn btn-deactivate';
+                } else {
+                    btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Activate';
+                    btn.className = 'btn btn-activate';
+                }
+                btn.disabled = false;
+            };
+
+            // Send the request
+            xhr.send(`faculty_id=${facultyId}&status=${newStatus}`);
+        }
     });
 
     editSpan.onclick = function () {
         editModal.style.display = "none";
         document.body.style.overflow = "auto";
     }
-
-    // Activate/Deactivate button toggle functionality
-    const activateBtns = document.querySelectorAll('.btn-deactivate, .btn-activate');
-
-    activateBtns.forEach(btn => {
-        btn.onclick = function (e) {
-            e.preventDefault();
-
-            const row = this.closest('tr');
-            const statusCell = row.querySelector('td:nth-child(7) .status');
-            const isActive = statusCell.textContent.includes('Active');
-
-            if (isActive) {
-                // Change to inactive
-                statusCell.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Inactive';
-                statusCell.className = 'status status-inactive';
-                this.innerHTML = '<i class="fa-solid fa-user-check"></i> Activate';
-                this.className = 'btn btn-activate';
-            } else {
-                // Change to active
-                statusCell.innerHTML = '<i class="fa-solid fa-circle-check"></i> Active';
-                statusCell.className = 'status status-active';
-                this.innerHTML = '<i class="fa-solid fa-user-slash"></i> Deactivate';
-                this.className = 'btn btn-deactivate';
-            }
-
-            // In a real application, you would send an AJAX request to update the status in the database
-        };
-    });
 
     // Close modals when clicking outside
     window.onclick = function (event) {
@@ -1170,27 +1587,432 @@ $result = mysqli_query($conn, $query);
         document.getElementById("password").value = generatePassword();
     });
 
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('keyup', function () {
-        const searchValue = this.value.toLowerCase();
+    // AJAX form submission for adding new faculty
+    document.getElementById('addFacultyForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        // Show loading state
+        const submitBtn = document.getElementById('addFacultySubmitBtn');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        submitBtn.disabled = true;
+
+        // Clear previous errors
+        const errorsDiv = document.getElementById('addFacultyErrors');
+        errorsDiv.style.display = 'none';
+        errorsDiv.innerHTML = '';
+
+        // Create FormData object
+        const formData = new FormData(this);
+
+        // Send AJAX request
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'faculty_management_process.php?action=add', true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        xhr.onload = function () {
+            if (this.status === 200) {
+                try {
+                    const response = JSON.parse(this.responseText);
+
+                    if (response.success) {
+                        // Show success message
+                        const successMessage = response.message || 'Faculty added successfully';
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'alert alert-success';
+                        messageDiv.style.cssText = 'background-color: #d4edda; color: #155724; padding: 15px; margin-bottom: 20px; border-radius: 5px; position: fixed; top: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 8px rgba(0,0,0,0.1);';
+                        messageDiv.innerHTML = '<i class="fa-solid fa-check-circle"></i> ' + successMessage;
+                        document.body.appendChild(messageDiv);
+
+                        // Close the modal
+                        addModal.style.display = "none";
+                        document.body.style.overflow = "auto";
+
+                        // Reset the form
+                        document.getElementById('addFacultyForm').reset();
+                        document.getElementById('employee_image').src = '../assets/placeholder.jpg';
+                        document.getElementById('password').value = generatePassword();
+
+                        // Add the new faculty to the table
+                        addFacultyToTable(response.faculty);
+
+                        // Remove the message after 3 seconds
+                        setTimeout(() => {
+                            messageDiv.style.opacity = '0';
+                            messageDiv.style.transition = 'opacity 0.5s ease';
+                            setTimeout(() => {
+                                document.body.removeChild(messageDiv);
+                            }, 500);
+                        }, 3000);
+                    } else {
+                        // Show errors
+                        if (response.errors && response.errors.length > 0) {
+                            errorsDiv.innerHTML = '<ul style="margin: 0; padding-left: 20px;">' +
+                                response.errors.map(error => '<li>' + error + '</li>').join('') +
+                                '</ul>';
+                            errorsDiv.style.display = 'block';
+                        } else {
+                            errorsDiv.innerHTML = '<p>An unknown error occurred. Please try again.</p>';
+                            errorsDiv.style.display = 'block';
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing JSON:', e);
+                    errorsDiv.innerHTML = '<p>An error occurred while processing your request. Please try again.</p>';
+                    errorsDiv.style.display = 'block';
+                }
+            } else {
+                errorsDiv.innerHTML = '<p>Server error: ' + this.status + '. Please try again.</p>';
+                errorsDiv.style.display = 'block';
+            }
+
+            // Reset button state
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+        };
+
+        xhr.onerror = function () {
+            errorsDiv.innerHTML = '<p>Network error. Please check your connection and try again.</p>';
+            errorsDiv.style.display = 'block';
+
+            // Reset button state
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+        };
+
+        // Send the form data
+        xhr.send(formData);
+    });
+
+    // Function to add a new faculty to the table
+    function addFacultyToTable(faculty) {
+        const tbody = document.querySelector('table tbody');
+
+        // Check if there's a "No faculty members found" message
+        const noFacultyRow = tbody.querySelector('tr td[colspan]');
+        if (noFacultyRow) {
+            tbody.innerHTML = ''; // Clear the "No faculty members found" message
+        }
+
+        // Create a new row
+        const newRow = document.createElement('tr');
+
+        // Get role name based on role_id
+        let roleName = 'Faculty';
+        if (faculty.role_id === '2') {
+            roleName = 'Admin';
+        }
+
+        // Format the status
+        const statusHtml = faculty.status === 'active' ?
+            '<span class="status status-active"><i class="fa-solid fa-circle-check"></i> Active</span>' :
+            '<span class="status status-inactive"><i class="fa-solid fa-circle-xmark"></i> Inactive</span>';
+
+        // Set the row HTML
+        newRow.innerHTML = `
+            <td>${faculty.faculty_id}</td>
+            <td>${faculty.first_name}</td>
+            <td>${faculty.last_name}</td>
+            <td>${faculty.email}</td>
+            <td>${faculty.account_creation_date}</td>
+            <td>${roleName}</td>
+            <td>${statusHtml}</td>
+            <td>
+                <img src="${faculty.profile_image || '../assets/placeholder.jpg'}" alt="Profile"
+                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+            </td>
+            <td class="actions">
+                <a href="#" class="btn btn-edit" data-faculty-id="${faculty.faculty_id}">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                </a>
+                ${faculty.status === 'active' ?
+                `<a href="#" class="btn btn-deactivate" data-faculty-id="${faculty.faculty_id}">
+                        <i class="fa-solid fa-user-slash"></i> Deactivate
+                    </a>
+                    <noscript>
+                        <a href="faculty_management_process.php?action=toggle_status&faculty_id=${faculty.faculty_id}"
+                           class="btn btn-deactivate">
+                            <i class="fa-solid fa-user-slash"></i> Deactivate (No JS)
+                        </a>
+                    </noscript>` :
+                `<a href="#" class="btn btn-activate" data-faculty-id="${faculty.faculty_id}">
+                        <i class="fa-solid fa-user-check"></i> Activate
+                    </a>
+                    <noscript>
+                        <a href="faculty_management_process.php?action=toggle_status&faculty_id=${faculty.faculty_id}"
+                           class="btn btn-activate">
+                            <i class="fa-solid fa-user-check"></i> Activate (No JS)
+                        </a>
+                    </noscript>`
+            }
+            </td>
+        `;
+
+        // Add the row to the table
+        tbody.appendChild(newRow);
+    }
+
+    // Function to update filter stats
+    function updateFilterStats() {
+        const rows = document.querySelectorAll('tbody tr');
+        let totalCount = 0;
+        let activeCount = 0;
+        let inactiveCount = 0;
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            // Skip rows that span multiple columns (like the "No faculty members found" message)
+            if (row.querySelector('td[colspan]')) {
+                return;
+            }
+
+            totalCount++;
+
+            // Get the status cell - it's the 7th column (index 6)
+            const statusCell = row.querySelector('td:nth-child(7) .status');
+            if (statusCell) {
+                const statusText = statusCell.textContent.trim().toLowerCase();
+                // Check if the status contains "active" but not as part of "inactive"
+                if (statusText.includes('active') && !statusText.includes('inactive')) {
+                    activeCount++;
+                } else if (statusText.includes('inactive')) {
+                    inactiveCount++;
+                }
+            }
+
+            if (row.style.display !== 'none') {
+                visibleCount++;
+            }
+        });
+
+        // Log counts for debugging
+        console.log('Stats:', { total: totalCount, active: activeCount, inactive: inactiveCount, visible: visibleCount });
+
+        // Update the stats display
+        document.getElementById('totalFaculty').textContent = totalCount;
+        document.getElementById('activeFaculty').textContent = activeCount;
+        document.getElementById('inactiveFaculty').textContent = inactiveCount;
+        document.getElementById('filteredCount').textContent = visibleCount;
+    }
+
+    // Function to apply all filters
+    function applyFilters() {
+        const searchValue = document.getElementById('searchInput').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+        const roleFilter = document.getElementById('roleFilter').value.toLowerCase();
+
         const rows = document.querySelectorAll('tbody tr');
 
         rows.forEach(row => {
+            // Skip rows that span multiple columns (like the "No faculty members found" message)
+            if (row.querySelector('td[colspan]')) {
+                return;
+            }
+
+            // Get cell values
             const facultyId = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
             const firstName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
             const lastName = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
             const email = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+            const role = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
+            const statusCell = row.querySelector('td:nth-child(7) .status');
+            const status = statusCell ? statusCell.textContent.trim().toLowerCase() : '';
 
-            if (facultyId.includes(searchValue) ||
+            // Check if row matches search criteria
+            const matchesSearch = searchValue === '' ||
+                facultyId.includes(searchValue) ||
                 firstName.includes(searchValue) ||
                 lastName.includes(searchValue) ||
-                email.includes(searchValue)) {
+                email.includes(searchValue);
+
+            // Check if row matches status filter
+            let matchesStatus = false;
+            if (statusFilter === 'all') {
+                matchesStatus = true;
+            } else if (statusFilter === 'active') {
+                matchesStatus = status.includes('active') && !status.includes('inactive');
+            } else if (statusFilter === 'inactive') {
+                matchesStatus = status.includes('inactive');
+            }
+
+            // Check if row matches role filter
+            const matchesRole = roleFilter === 'all' ||
+                (roleFilter === '1' && role.includes('faculty')) ||
+                (roleFilter === '2' && role.includes('admin'));
+
+            // Show/hide row based on all filters
+            if (matchesSearch && matchesStatus && matchesRole) {
                 row.style.display = '';
+                row.classList.add('filtered-in');
+                row.classList.remove('filtered-out');
             } else {
                 row.style.display = 'none';
+                row.classList.add('filtered-out');
+                row.classList.remove('filtered-in');
             }
         });
+
+        // Update stats after filtering
+        updateFilterStats();
+    }
+
+    // Initialize filter stats on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        // Set a small delay to ensure DOM is fully loaded
+        setTimeout(() => {
+            updateFilterStats();
+
+            // Add animation class to stats with staggered delay
+            document.querySelectorAll('.filter-stat-item').forEach((item, index) => {
+                item.style.setProperty('--item-index', index);
+                item.classList.add('animate-in');
+            });
+
+            // Initialize sorting indicators
+            document.querySelectorAll('th[data-sort] i').forEach(icon => {
+                icon.className = 'fa-solid fa-sort';
+                icon.style.opacity = '0.5';
+            });
+        }, 100);
     });
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        applyFilters();
+    });
+
+    // Status filter functionality
+    document.getElementById('statusFilter').addEventListener('change', function () {
+        applyFilters();
+    });
+
+    // Role filter functionality
+    document.getElementById('roleFilter').addEventListener('change', function () {
+        applyFilters();
+    });
+
+    // Clear filters button
+    document.addEventListener('click', function (e) {
+        if (e.target.id === 'clearFilters') {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('roleFilter').value = 'all';
+            applyFilters();
+        }
+    });
+
+    // Table sorting functionality
+    let currentSort = {
+        column: null,
+        direction: 'asc'
+    };
+
+    // Add click event listeners to table headers
+    document.querySelectorAll('th[data-sort]').forEach(header => {
+        header.addEventListener('click', function () {
+            const sortBy = this.getAttribute('data-sort');
+            const sortIcon = this.querySelector('i');
+
+            // Show loading indicator
+            document.querySelector('.table-loader').classList.add('active');
+
+            // Update sort direction
+            if (currentSort.column === sortBy) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = sortBy;
+                currentSort.direction = 'asc';
+            }
+
+            // Update all sort icons
+            document.querySelectorAll('th[data-sort] i').forEach(icon => {
+                icon.className = 'fa-solid fa-sort';
+                icon.style.opacity = '0.5';
+            });
+
+            // Update clicked header's icon
+            if (currentSort.direction === 'asc') {
+                sortIcon.className = 'fa-solid fa-sort-up';
+            } else {
+                sortIcon.className = 'fa-solid fa-sort-down';
+            }
+            sortIcon.style.opacity = '1';
+
+            // Sort the table
+            sortTable(sortBy, currentSort.direction);
+
+            // Hide loading indicator after a short delay
+            setTimeout(() => {
+                document.querySelector('.table-loader').classList.remove('active');
+            }, 300);
+        });
+    });
+
+    // Function to sort the table
+    function sortTable(column, direction) {
+        const tbody = document.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr:not([colspan])'));
+
+        // Skip if no rows to sort or only has the "No faculty members found" row
+        if (rows.length <= 1) return;
+
+        // Define column indices
+        const columnMap = {
+            'id': 0,
+            'first_name': 1,
+            'last_name': 2,
+            'email': 3,
+            'date': 4,
+            'role': 5,
+            'status': 6
+        };
+
+        const columnIndex = columnMap[column];
+
+        // Sort rows
+        const sortedRows = rows.sort((a, b) => {
+            // Skip rows with colspan (like "No faculty members found")
+            if (a.querySelector('td[colspan]') || b.querySelector('td[colspan]')) return 0;
+
+            let aValue = a.cells[columnIndex].textContent.trim().toLowerCase();
+            let bValue = b.cells[columnIndex].textContent.trim().toLowerCase();
+
+            // Special handling for dates
+            if (column === 'date') {
+                aValue = new Date(aValue);
+                bValue = new Date(bValue);
+
+                // Handle invalid dates
+                if (isNaN(aValue)) aValue = new Date(0);
+                if (isNaN(bValue)) bValue = new Date(0);
+            }
+
+            // Compare values
+            if (aValue < bValue) {
+                return direction === 'asc' ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+
+        // Remove all rows
+        rows.forEach(row => {
+            row.remove();
+        });
+
+        // Add sorted rows back to the table
+        sortedRows.forEach(row => {
+            tbody.appendChild(row);
+        });
+
+        // Update row classes for animation
+        sortedRows.forEach((row, index) => {
+            row.style.animationDelay = `${index * 0.05}s`;
+            row.classList.add('sorted');
+        });
+    }
 </script>
 
 </html>

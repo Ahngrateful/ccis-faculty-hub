@@ -35,7 +35,7 @@ if ($result && $row = mysqli_fetch_assoc($result)) {
 $query = "SELECT COUNT(*) as total FROM faculty_compliance_status WHERE status = 'pending'";
 $result = mysqli_query($conn, $query);
 if ($result && $row = mysqli_fetch_assoc($result)) {
-  $pending_submissions = $row['total'];
+    $pending_submissions = $row['total'];
 }
 
 // Get recent activities
@@ -70,6 +70,7 @@ if ($result) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -276,23 +277,30 @@ if ($result) {
         /* Notification Bell */
         .notification-bell {
             position: relative;
+            padding: 12px;
+            border-radius: 50%;
+            background-color: var(--gray-light);
             cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .notification-bell:hover {
+            background-color: var(--primary-light);
         }
 
         .notification-badge {
             position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: #e74c3c;
-            color: white;
+            top: 5px;
+            right: 5px;
+            width: 15px;
+            height: 15px;
+            background-color: #ff5252;
             border-radius: 50%;
-            width: 18px;
-            height: 18px;
+            font-size: 0.6rem;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
-            font-weight: 600;
         }
 
         /* Main Content */
@@ -479,7 +487,8 @@ if ($result) {
             border-collapse: collapse;
         }
 
-        th, td {
+        th,
+        td {
             padding: 15px;
             text-align: left;
         }
@@ -551,7 +560,8 @@ if ($result) {
                 overflow: hidden;
             }
 
-            .sidebar h3, .sidebar a span {
+            .sidebar h3,
+            .sidebar a span {
                 display: none;
             }
 
@@ -597,157 +607,168 @@ if ($result) {
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <img src="../assets/CCIS-Logo-Official.png" alt="College Logo" class="logo">
-            <h3><i>Faculty Project Management System</i></h3>
-        </div>
-        <div class="nav-links">
-            <a href="dashboard.php" class="active"><i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span></a>
-            <a href="approvals.php"><i class="fa-solid fa-check-to-slot"></i> <span>Approvals</span></a>
-            <a href="reports.php"><i class="fa-solid fa-chart-pie"></i> <span>Reports</span></a>
-            <a href="faculty_management.php"><i class="fa-solid fa-users-gear"></i> <span>Faculty Management</span></a>
-            <a href="ched_compli-audit.php"><i class="fa-solid fa-clipboard-check"></i> <span>CHED Compliance Audit</span></a>
-            <a href="logout.php" class="logout"><i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span></a>
-        </div>
-    </div>
-
-    <div class="content">
-        <div class="header">
-            <div class="header-left">
-                <h1 class="page-title"><i class="fa-solid fa-gauge-high"></i> Dashboard</h1>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <img src="../assets/CCIS-Logo-Official.png" alt="College Logo" class="logo">
+                <h3><i>Faculty Project Management System</i></h3>
             </div>
-            <div class="header-right">
-                <div class="notification-bell">
-                    <i class="fa-solid fa-bell"></i>
-                    <div class="notification-badge">3</div>
-                </div>
-                <div class="user-profile">
-                    <div class="user-avatar"><?php echo substr($_SESSION['admin_name'] ?? 'A', 0, 1); ?></div>
-                    <div>
-                        <p style="font-weight: 600; margin: 0;"><?php echo $_SESSION['admin_name'] ?? 'Admin User'; ?></p>
-                        <p style="font-size: 0.8rem; color: var(--text-light); margin: 0;">Administrator</p>
-                    </div>
-                </div>
+            <div class="nav-links">
+                <a href="dashboard.php" class="active"><i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span></a>
+                <a href="approvals.php"><i class="fa-solid fa-check-to-slot"></i> <span>Approvals</span></a>
+                <a href="reports.php"><i class="fa-solid fa-chart-pie"></i> <span>Reports</span></a>
+                <a href="faculty_management.php"><i class="fa-solid fa-users-gear"></i> <span>Faculty
+                        Management</span></a>
+                <a href="ched_compli-audit.php"><i class="fa-solid fa-clipboard-check"></i> <span>CHED Compliance
+                        Audit</span></a>
+                <a href="logout.php" class="logout"><i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Logout</span></a>
             </div>
         </div>
 
-        <div class="main-content">
-            <div class="stats">
-                <div class="stat-box">
-                    <div class="stat-box-icon">
-                        <i class="fa-solid fa-users"></i>
-                    </div>
-                    <div class="stat-box-title">Faculty Members</div>
-                    <div class="stat-box-value"><?php echo $total_faculty; ?></div>
-                    <div class="stat-info">Total registered faculty</div>
+        <div class="content">
+            <div class="header">
+                <div class="header-left">
+                    <h1 class="page-title"><i class="fa-solid fa-gauge-high"></i> Dashboard</h1>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-box-icon">
-                        <i class="fa-solid fa-file-circle-check"></i>
+                <div class="header-right">
+                    <div class="notification-bell">
+                        <i class="fa-solid fa-bell"></i>
+                        <div class="notification-badge">3</div>
                     </div>
-                    <div class="stat-box-title">Total Submissions</div>
-                    <div class="stat-box-value"><?php echo $total_submissions; ?></div>
-                    <div class="stat-info">Across all requirements</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-box-icon">
-                        <i class="fa-solid fa-hourglass-half"></i>
+                    <div class="user-profile">
+                        <div class="user-avatar"><?php echo substr($_SESSION['admin_name'] ?? 'A', 0, 1); ?></div>
+                        <div>
+                            <p style="font-weight: 600; margin: 0;">
+                                <?php echo $_SESSION['admin_name'] ?? 'Admin User'; ?></p>
+                            <p style="font-size: 0.8rem; color: var(--text-light); margin: 0;">Administrator</p>
+                        </div>
                     </div>
-                    <div class="stat-box-title">Pending Review</div>
-                    <div class="stat-box-value"><?php echo $pending_submissions; ?></div>
-                    <div class="stat-info">Submissions awaiting approval</div>
-                    <?php if ($pending_submissions > 0): ?>
-                    <div class="stat-change positive">
-                        <i class="fa-solid fa-arrow-up"></i> <?php echo $pending_submissions; ?> new
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
 
-            <div class="action-buttons">
-                <a href="approvals.php" class="action-button">
-                    <i class="fa-solid fa-clipboard-check action-icon-green"></i>
-                    <div class="action-button-text">
-                        <div class="action-button-title">Review Submissions</div>
-                        <div class="action-button-description">Approve or reject pending submissions</div>
+            <div class="main-content">
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-box-icon">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div class="stat-box-title">Faculty Members</div>
+                        <div class="stat-box-value"><?php echo $total_faculty; ?></div>
+                        <div class="stat-info">Total registered faculty</div>
                     </div>
-                </a>
-                <a href="faculty_management.php" class="action-button">
-                    <i class="fa-solid fa-user-plus action-icon-blue"></i>
-                    <div class="action-button-text">
-                        <div class="action-button-title">Manage Faculty</div>
-                        <div class="action-button-description">Add, edit or remove faculty accounts</div>
+                    <div class="stat-box">
+                        <div class="stat-box-icon">
+                            <i class="fa-solid fa-file-circle-check"></i>
+                        </div>
+                        <div class="stat-box-title">Total Submissions</div>
+                        <div class="stat-box-value"><?php echo $total_submissions; ?></div>
+                        <div class="stat-info">Across all requirements</div>
                     </div>
-                </a>
-                <a href="reports.php" class="action-button">
-                    <i class="fa-solid fa-chart-column action-icon-orange"></i>
-                    <div class="action-button-text">
-                        <div class="action-button-title">Generate Reports</div>
-                        <div class="action-button-description">Create and export compliance reports</div>
+                    <div class="stat-box">
+                        <div class="stat-box-icon">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </div>
+                        <div class="stat-box-title">Pending Review</div>
+                        <div class="stat-box-value"><?php echo $pending_submissions; ?></div>
+                        <div class="stat-info">Submissions awaiting approval</div>
+                        <?php if ($pending_submissions > 0): ?>
+                            <div class="stat-change positive">
+                                <i class="fa-solid fa-arrow-up"></i> <?php echo $pending_submissions; ?> new
+                            </div>
+                        <?php endif; ?>
                     </div>
-                </a>
-            </div>
+                </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                        Recent Activities
-                    </h2>
-                    <a href="approvals.php" style="color: var(--primary); text-decoration: none; font-size: 0.9rem;">
-                        View All <i class="fa-solid fa-arrow-right"></i>
+                <div class="action-buttons">
+                    <a href="approvals.php" class="action-button">
+                        <i class="fa-solid fa-clipboard-check action-icon-green"></i>
+                        <div class="action-button-text">
+                            <div class="action-button-title">Review Submissions</div>
+                            <div class="action-button-description">Approve or reject pending submissions</div>
+                        </div>
+                    </a>
+                    <a href="faculty_management.php" class="action-button">
+                        <i class="fa-solid fa-user-plus action-icon-blue"></i>
+                        <div class="action-button-text">
+                            <div class="action-button-title">Manage Faculty</div>
+                            <div class="action-button-description">Add, edit or remove faculty accounts</div>
+                        </div>
+                    </a>
+                    <a href="reports.php" class="action-button">
+                        <i class="fa-solid fa-chart-column action-icon-orange"></i>
+                        <div class="action-button-text">
+                            <div class="action-button-title">Generate Reports</div>
+                            <div class="action-button-description">Create and export compliance reports</div>
+                        </div>
                     </a>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Faculty</th>
-                                    <th>Requirement</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (!empty($recent_activities)): ?>
-                                    <?php foreach($recent_activities as $activity): ?>
-                                        <tr>
-                                            <td><?php echo htmlspecialchars($activity['faculty_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($activity['requirement']); ?></td>
-                                            <td><?php echo date('M d, Y h:ia', strtotime($activity['date'])); ?></td>
-                                            <td>
-                                                <span class="status status-<?php echo $activity['status']; ?>">
-                                                    <i class="fa-solid fa-<?php 
-                                                        if ($activity['status'] == 'approved') echo 'check-circle';
-                                                        elseif ($activity['status'] == 'rejected') echo 'times-circle';
-                                                        else echo 'clock';
-                                                    ?>"></i>
-                                                    <?php echo ucfirst($activity['status']); ?>
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            Recent Activities
+                        </h2>
+                        <a href="approvals.php"
+                            style="color: var(--primary); text-decoration: none; font-size: 0.9rem;">
+                            View All <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
                                     <tr>
-                                        <td colspan="4" style="text-align: center;">No recent activities found</td>
+                                        <th>Faculty</th>
+                                        <th>Requirement</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
                                     </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($recent_activities)): ?>
+                                        <?php foreach ($recent_activities as $activity): ?>
+                                            <tr>
+                                                <td><?php echo htmlspecialchars($activity['faculty_name']); ?></td>
+                                                <td><?php echo htmlspecialchars($activity['requirement']); ?></td>
+                                                <td><?php echo date('M d, Y h:ia', strtotime($activity['date'])); ?></td>
+                                                <td>
+                                                    <span class="status status-<?php echo $activity['status']; ?>">
+                                                        <i class="fa-solid fa-<?php
+                                                        if ($activity['status'] == 'approved')
+                                                            echo 'check-circle';
+                                                        elseif ($activity['status'] == 'rejected')
+                                                            echo 'times-circle';
+                                                        else
+                                                            echo 'clock';
+                                                        ?>"></i>
+                                                        <?php echo ucfirst($activity['status']); ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="4" style="text-align: center;">No recent activities found</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="footer">
-            <p> 2025 University of Makati - CCIS Faculty Project Management System v1.0 | <a href="#">Help Center</a> | <a href="#">Contact Support</a></p>
+            <div class="footer">
+                <p> 2025 University of Makati - CCIS Faculty Project Management System v1.0 | <a href="#">Help
+                        Center</a> | <a href="#">Contact Support</a></p>
+            </div>
         </div>
     </div>
-</div>
 </body>
+
 </html>
